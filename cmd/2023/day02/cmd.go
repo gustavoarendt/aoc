@@ -26,7 +26,7 @@ func execute(parent, command string) {
 	}
 
 	logrus.Infof("Score - Day 02 - Step One: %d", stepOne(string(content)))
-	// logrus.Infof("Score - Day 02 - Step Two: %d", stepTwo(string(content)))
+	logrus.Infof("Score - Day 02 - Step Two: %d", stepTwo(string(content)))
 }
 
 func stepOne(input string) int {
@@ -40,31 +40,14 @@ func stepOne(input string) int {
 	return score
 }
 
-// func stepTwo(input string) int {
-// 	var score int
-// 	for _, line := range strings.Split(input, "\n") {
-// 		numbersOnly := []string{}
-
-// 		for idx, character := range line {
-// 			if unicode.IsDigit(character) {
-// 				numbersOnly = append(numbersOnly, string(character))
-// 			} else {
-// 				if digitStr, found := hasDigitPrefix(line[idx:]); found {
-// 					numbersOnly = append(numbersOnly, digitStr)
-// 				}
-// 			}
-// 		}
-
-// 		concat := numbersOnly[0] + numbersOnly[len(numbersOnly)-1]
-
-// 		result, err := strconv.Atoi(concat)
-// 		if err != nil {
-// 			panic(err)
-// 		}
-// 		score += result
-// 	}
-// 	return score
-// }
+func stepTwo(input string) int {
+	var score int
+	for _, line := range strings.Split(input, "\n") {
+		powerSet := getPowerSets(line)
+		score += powerSet
+	}
+	return score
+}
 
 func isGamePossible(line string) (int, bool) {
 	maxRedCube := 12
@@ -111,4 +94,53 @@ func calcRound(round string) (int, bool, int, bool, int, bool) {
 		}
 	}
 	return red, hasRed, green, hasGreen, blue, hasBlue
+}
+
+func getPowerSets(line string) (int) {
+	var maxRed int
+	var maxGreen int
+	var maxBlue int
+	game := strings.Split(line, ": ")[1]
+	for _, round := range strings.Split(game, "; ") {
+		round = strings.Split(round, "\r")[0]
+		roundRed, roundGreen, roundBlue := calcMaxCubePerRound(round)
+		if roundRed > maxRed {
+			maxRed = roundRed
+		}
+		if roundGreen > maxGreen {
+			maxGreen = roundGreen
+		}
+		if roundBlue > maxBlue {
+			maxBlue = roundBlue
+		}
+	}
+	return maxRed * maxGreen * maxBlue
+}
+
+func calcMaxCubePerRound(round string) (int, int, int) {
+	var red int
+	var green int
+	var blue int
+	cubes := strings.Split(round, ", ")
+	for _, cube := range cubes {
+		if strings.Contains(cube, "red") {
+			redString, hasRedBool := strings.CutSuffix(cube, " red")
+			if hasRedBool {
+				red, _ = strconv.Atoi(redString);
+			}
+		}
+		if strings.Contains(cube, "green") {
+			greenString, hasGreenBool := strings.CutSuffix(cube, " green")
+			if hasGreenBool {
+				green, _ = strconv.Atoi(greenString);
+			}
+		}
+		if strings.Contains(cube, "blue") {
+			blueString, hasBlueBool := strings.CutSuffix(cube, " blue")
+			if hasBlueBool {
+				blue, _ = strconv.Atoi(blueString);
+			}
+		}
+	}
+	return red,  green,  blue
 }
