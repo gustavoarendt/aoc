@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/gustavoarendt/aoc/cmd/2023/day01"
+	"github.com/gustavoarendt/aoc/cmd/2023/day02"
 	"github.com/spf13/cobra"
 )
 
@@ -19,6 +20,7 @@ var Cmd = &cobra.Command{
 
 func init() {
 	Cmd.AddCommand(day01.Cmd)
+	Cmd.AddCommand(day02.Cmd)
 }
 
 func Execute() {
