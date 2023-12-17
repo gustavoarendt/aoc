@@ -6,6 +6,7 @@ import (
 
 	"github.com/gustavoarendt/aoc/cmd/2023/day01"
 	"github.com/gustavoarendt/aoc/cmd/2023/day02"
+	"github.com/gustavoarendt/aoc/cmd/2023/day03"
 	"github.com/spf13/cobra"
 )
 
@@ -13,7 +14,7 @@ var Cmd = &cobra.Command{
 	Use:   "2023",
 	Short: "Advent of Code",
 	Long:  "Advent of Code using Go Language",
-	Run:   func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Help()
 	},
 }
@@ -21,6 +22,7 @@ var Cmd = &cobra.Command{
 func init() {
 	Cmd.AddCommand(day01.Cmd)
 	Cmd.AddCommand(day02.Cmd)
+	Cmd.AddCommand(day03.Cmd)
 }
 
 func Execute() {
@@ -30,6 +32,6 @@ func Execute() {
 	}
 }
 
-func Help () {
+func Help() {
 	print("Uses go run main.go 'year' 'day' to run the program\n")
 }
