@@ -18,11 +18,11 @@ func TestSteps(t *testing.T) {
 			input:    "test.txt",
 			fn:       stepOne,
 		},
-		// {
-		// 	expected: 2286,
-		// 	input:    "test2.txt",
-		// 	fn: stepTwo,
-		// },
+		{
+			expected: 467835,
+			input:    "test2.txt",
+			fn:       stepTwo,
+		},
 	}
 
 	for _, test := range tests {

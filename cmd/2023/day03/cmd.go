@@ -5,7 +5,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"unicode"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -26,104 +25,138 @@ func execute(parent, command string) {
 		panic(err)
 	}
 
-	logrus.Infof("Score - Day 02 - Step One: %d", stepOne(string(content)))
-	// logrus.Infof("Score - Day 02 - Step Two: %d", stepTwo(string(content)))
+	logrus.Infof("Score - Day 03 - Step One: %d", stepOne(string(content)))
+	logrus.Infof("Score - Day 03 - Step Two: %d", stepTwo(string(content)))
 }
 
-// adicionar lineNumber, preencher os números e arrays dos lineNumbers
+type coord struct {
+	x int
+	y int
+}
+type gridNumBuilder struct {
+	sb  strings.Builder
+	pos coord
+}
+
+func (gnb *gridNumBuilder) setPos(c coord) {
+	gnb.pos = c
+}
+
+func (gnb *gridNumBuilder) addDigit(c rune) {
+	gnb.sb.WriteRune(c)
+}
+
+func (gnb gridNumBuilder) empty() bool {
+	return gnb.sb.Len() == 0
+}
+
+func (gnb *gridNumBuilder) flush() (coord, gridNum) {
+	pos := gnb.pos
+	gn := parseNum(gnb.sb.String())
+	gnb.reset()
+	return pos, gn
+}
+
+func (gnb *gridNumBuilder) reset() {
+	gnb.pos = coord{}
+	gnb.sb.Reset()
+}
+
+type gridNum int
+
+func (g gridNum) bounds(pos coord) (coord, coord) {
+	l := len(strconv.Itoa(int(g)))
+	return coord{x: pos.x - 1, y: pos.y - 1}, coord{x: pos.x + l, y: pos.y + 1}
+}
+
+type numGrid map[coord]gridNum
+type symbolGrid map[coord]rune
+
+func contains(p coord, min coord, max coord) bool {
+	return p.x >= min.x && p.y >= min.y && p.x <= max.x && p.y <= max.y
+}
+
+func parseNum(s string) gridNum {
+	n, err := strconv.Atoi(s)
+	if err != nil {
+		panic(err)
+	}
+	return gridNum(n)
+}
+
+func parseGrid(lines []string) (numGrid, symbolGrid) {
+	nums := numGrid{}
+	symbols := symbolGrid{}
+	for y, line := range lines {
+		var gnb gridNumBuilder
+		for x, ch := range line {
+			c := coord{x: x, y: y}
+			switch ch {
+			case '1', '2', '3', '4', '5', '6', '7', '8', '9', '0':
+				if gnb.empty() {
+					gnb.setPos(c)
+				}
+				gnb.addDigit(ch)
+				if x < len(line)-1 {
+					continue
+				}
+			case '.':
+			default:
+				symbols[c] = ch
+			}
+
+			if !gnb.empty() {
+				pos, gn := gnb.flush()
+				nums[pos] = gn
+			}
+		}
+	}
+	return nums, symbols
+}
+
+func findParts(nums numGrid, symbols symbolGrid) (parts []int) {
+	for npos, num := range nums {
+		for spos := range symbols {
+			min, max := num.bounds(npos)
+			if contains(spos, min, max) {
+				parts = append(parts, int(num))
+			}
+		}
+	}
+	return parts
+}
 
 func stepOne(input string) int {
 	var score int
-	numbersPositions := make(map[int][]int)
-	symbolsPositions := make(map[int][]int)
-	numberLineRelation := make(map[int]int)
-	for lineNumber, line := range strings.Split(input, "\n") {
-		var numberString string
-		var firstDigitIndex int
-		var lastDigitIndex int
-		line = strings.Split(line, "\r")[0]
-		for index, char := range line {
-			if isDigit(char) {
-				numberString += string(char)
-				if firstDigitIndex == 0 {
-					firstDigitIndex = index
-				}
-				lastDigitIndex = index
-
-				if index == len(line)-1 {
-					number, _ := strconv.Atoi(numberString)
-					numberString = ""
-					if number > 0 {
-						numbersPositions[number] = append(numbersPositions[number], firstDigitIndex)
-						numbersPositions[number] = append(numbersPositions[number], lastDigitIndex)
-						numberLineRelation[number] = lineNumber
-						firstDigitIndex = 0
-					}
-				}
-			} else {
-				number, _ := strconv.Atoi(numberString)
-				numberString = ""
-				if number > 0 {
-					numbersPositions[number] = append(numbersPositions[number], firstDigitIndex)
-					numbersPositions[number] = append(numbersPositions[number], lastDigitIndex)
-					numberLineRelation[number] = lineNumber
-					firstDigitIndex = 0
-				}
-			}
-			if isValidSymbol(char) && !isDigit(char) {
-				symbolsPositions[lineNumber] = append(symbolsPositions[lineNumber], index)
-			}
-		}
+	lines := strings.Split(strings.TrimSpace(string(input)), "\n")
+	for i, line := range lines {
+		lines[i] = strings.TrimSuffix(line, "\r")
 	}
-	score = calculateScore(numbersPositions, symbolsPositions, numberLineRelation)
+	nums, symbols := parseGrid(lines)
+	for _, n := range findParts(nums, symbols) {
+		score += n
+	}
 	return score
 }
 
-func isValidSymbol(char rune) bool {
-	return char != 46
-}
-
-func isDigit(char rune) bool {
-	return unicode.IsDigit(rune(char))
-}
-
-func calculateScore(numbersPositions, symbolsPositions map[int][]int, numberLineRelation map[int]int) int {
+func stepTwo(input string) int {
 	var score int
-	var validNumber []bool
-	for number, positions := range numbersPositions {
-		for _, position := range positions {
-			validNumber = append(validNumber, contains(symbolsPositions, number, position, numberLineRelation[number]))
-		}
-		found := false
-		for _, check := range validNumber {
-			if check {
-				found = true
-				break
+	lines := strings.Split(strings.TrimSpace(string(input)), "\n")
+	for i, line := range lines {
+		lines[i] = strings.TrimSuffix(line, "\r")
+	}
+	nums, symbols := parseGrid(lines)
+	for spos := range symbols {
+		adjacent := []int{}
+		for npos, gn := range nums {
+			min, max := gn.bounds(npos)
+			if contains(spos, min, max) {
+				adjacent = append(adjacent, int(gn))
 			}
 		}
-		if found {
-			score += number
-			validNumber = []bool{}
+		if len(adjacent) == 2 {
+			score += adjacent[0] * adjacent[1]
 		}
 	}
 	return score
-}
-
-func contains(array map[int][]int, number, position, lineNumber int) bool {
-	symbolsAbove := array[lineNumber-1]
-	symbolsCurrent := array[lineNumber]
-	symbolsBelow := array[lineNumber+1]
-	if containsInt(symbolsAbove, position) || containsInt(symbolsCurrent, position) || containsInt(symbolsBelow, position) {
-		return true
-	}
-	return false
-}
-
-func containsInt(array []int, position int) bool {
-	for _, symbol := range array {
-		if symbol == position || symbol == position-1 || symbol == position+1 {
-			return true
-		}
-	}
-	return false
 }
